@@ -4,3 +4,7 @@ runtime:
   options:
     virtualenv: venv
 description: A minimal AWS Python Pulumi program
+template:
+  config:
+    bucketName:
+      description: The name of the S3 bucket

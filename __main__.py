@@ -2,17 +2,23 @@ import json
 import mimetypes
 import os
 
-from pulumi import FileAsset, Output, export, ResourceOptions
-from pulumi_aws import s3
+from pulumi import FileAsset, Output, export, ResourceOptions, Config
+import pulumi_aws as aws
 
-web_bucket = s3.Bucket(
-    "s3-website-bucket",
+config = Config()
+bucket_name = config.require("bucketName")
+
+web_bucket = aws.s3.Bucket("example",
+    bucket=bucket_name,
     website={
         "index_document": "index.html",
     },
-)
+    tags={
+        "Name": "My bucket",
+        "Environment": "Dev",
+    })
 
-public_access_block = s3.BucketPublicAccessBlock(
+public_access_block = aws.s3.BucketPublicAccessBlock(
     "public-access-block", bucket=web_bucket.id, block_public_acls=False
 )
 
@@ -20,7 +26,7 @@ content_dir = "www"
 for file in os.listdir(content_dir):
     filepath = os.path.join(content_dir, file)
     mime_type, _ = mimetypes.guess_type(filepath)
-    obj = s3.BucketObject(
+    obj = aws.s3.BucketObject(
         file, bucket=web_bucket.id, source=FileAsset(filepath), content_type=mime_type
     )
 
@@ -44,7 +50,7 @@ def public_read_policy_for_bucket(bucket_name):
 
 
 bucket_name = web_bucket.id
-bucket_policy = s3.BucketPolicy(
+bucket_policy = aws.s3.BucketPolicy(
     "bucket-policy",
     bucket=bucket_name,
     policy=public_read_policy_for_bucket(bucket_name),
